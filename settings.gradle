@@ -1,0 +1,11 @@
+/*
+ * File: settings.gradle
+ * Modification: 2026-10-10 - Fabric Maven and plugin management.
+ */
+pluginManagement {
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'NoteBlockTweaks'

@@ -1,0 +1,22 @@
+# --- Common / OS / IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.iml
+.env
+.env.local
+*.log
+
+# --- Java / Gradle ---
+.gradle/
+build/
+out/
+run/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Local AI governance and work records ---
+data/

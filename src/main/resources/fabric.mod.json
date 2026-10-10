@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "noteblocktweaks",
+  "version": "${version}",
+  "name": "NoteBlock Tweaks",
+  "description": "Tweakeroo Tweaks extension for client-only note block tuning GUI.",
+  "authors": [
+    "Miki"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.miki.noteblocktweaks.client.NoteBlockTweaksClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "minecraft": "1.21.8",
+    "java": ">=21",
+    "fabric-api": "*",
+    "tweakeroo": "*",
+    "malilib": ">=0.25.0-sakura.1"
+  },
+  "mixins": [
+    "noteblocktweaks.mixins.json"
+  ]
+}

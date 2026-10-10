@@ -1,0 +1,43 @@
+/*
+ * File: build.gradle
+ * Modification: 2026-10-10 - Minecraft 1.21.8 Fabric client project.
+ */
+plugins {
+    id 'fabric-loom' version '1.11.8'
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+repositories {
+    maven { url 'https://maven.fallenbreath.me/jitpack' }
+    maven { url 'https://maven.fallenbreath.me/releases' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    modImplementation "com.github.sakura-ryoko:malilib:${project.malilib_version}"
+    modImplementation("com.github.sakura-ryoko:tweakeroo:${project.tweakeroo_version}") {
+        exclude group: 'com.github.sakura-ryoko', module: 'malilib'
+    }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}

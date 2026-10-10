@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "dev.miki.noteblocktweaks.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "MixinTweakerooConfigs",
+    "MixinTweakerooGuiConfigs",
+    "MixinTweakerooInputHandler"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
