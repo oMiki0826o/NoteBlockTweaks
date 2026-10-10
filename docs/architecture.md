@@ -1,51 +1,76 @@
-# NoteBlock Tweaks 開發架構（v0.3.0）
+# NoteBlock Tweaks architecture
 
-這是純客戶端 Fabric 模組，在本地世界可以透過同一個 JVM 中的整合伺服器直接調音，在外部伺服器只能使用正常右鍵互動。
+This document describes the implementation of NoteBlock Tweaks `0.3.0+mc1.21.8` for maintainers. User-facing setup and controls are in the [README](../README.md).
 
-## 調音路由
+## Scope and invariants
+
+- The mod runs only in the Fabric client environment.
+- A note block pitch is always an integer from `0` through `24`.
+- The pitch clipboard stores only the pitch, never an instrument or a complete block state.
+- A remote server is authoritative. The client never persists a remote block-state change locally.
+- A dedicated server must not install this mod.
+
+## Components
+
+| Component | Responsibility |
+| --- | --- |
+| `NoteBlockTweaksClient` | Client entrypoint; registers tick, keybinding, and block-use hooks. |
+| `FeatureToggleExtended` | Tweakeroo/MaLiLib-compatible toggles for tuning, copy, and paste. |
+| `MixinTweakeroo*` | Adds the toggle collection and keybinds to Tweakeroo without replacing its existing configuration. |
+| `NoteTunerScreen` | Renders the 25-pitch picker and clipboard buttons. |
+| `TuningController` | Validates targets, routes requests, and drives remote interaction state. |
+| `IntegratedServerTuner` | Schedules an authoritative change on the integrated server for singleplayer. |
+| `PitchMath` / `NotePitchClipboard` | Isolated pitch validation, names, wrapping, and session clipboard state. |
+| `ModConfig` | Loads `config/noteblocktweaks.json`, clamps safe timing ranges, and falls back to defaults on invalid JSON. |
+
+## Interaction flow
 
 ```text
-GUI 音高選擇 / 快捷鍵貼上
-          │
-          └─ TuningController.begin()
-                      │
-                  安全前置檢查
-                      │
-           ┌──────────┴──────────┐
-           │                     │
-        本地世界              遠端伺服器
-           │                     │
-  IntegratedServerTuner     TuningController.tick
-           │                     │
-  integratedServer.execute()  每刻最多一個互動
-           │                     │
-  驗證玩家、距離、世界、權限      等待伺服器確認音高更新
-           │                     │
-  setBlockState()                直到完成或逾時
-           │
-  原版伺服器同步狀態
+empty-hand note-block use
+        │
+        ├─ tuner disabled / invalid target ───────────────► vanilla handling
+        │
+        └─ tuner enabled ─► UseBlockCallback returns FAIL
+                                │
+                                └─► NoteTunerScreen (0–24 picker)
+                                           │
+                                           └─► TuningController.begin()
+                                                    │
+                         ┌──────────────────────────┴──────────────────────────┐
+                         │                                                     │
+                 integrated server                                        remote server
+                         │                                                     │
+          IntegratedServerTuner.schedule()                         tick-driven vanilla use
+                         │                                                     │
+      server-thread validation + setBlockState()          one interaction → await state ack
+                                                                      │
+                                              target reached / timeout / interruption → stop
 ```
 
-## 其他設計決策
+`UseBlockCallback` returns `FAIL` when it opens the picker. This is intentional: Fabric's success result would allow the same click to reach vanilla and increment the note before the user has chosen a pitch.
 
-- 客戶端的 `ClientWorld#setBlockState` 絕不用來執行持久化調音。
-- 讀取音高使用 `NoteBlock.NOTE`，值域 0–24。
-- 使用 Fabric `UseBlockCallback` 的 **FAIL**（非 SUCCESS），開啟 GUI 不應送出第一下互動封包。
-- `FeatureToggleExtended` 分別定義調音、複製、貼上開關；快捷鍵切換仍由 Tweakeroo 管理。
-- GUI 操作與鍵盤動作都是複製/貼上功能入口，兩個動作鍵以 Fabric KeyBinding 註冊於原版「控制」設定，預設未綁定。
-- 外部伺服器的逐次點擊採取狀態確認與逾時機制；不得在未確認的情況下無限制重送。
-- GUI 只複製音高，不修改樂器種類（由音階盒上下的方塊等環境決定）。
+## Local and remote tuning
 
-## 純 Java 測試
+When `instantSingleplayer` is enabled and an integrated server is available, `IntegratedServerTuner` validates the player, world, position, distance, main hand, and note-block state on the server thread before calling `setBlockState`. The standard server update then synchronizes the result to the client.
 
-`PitchMathTest` 覆蓋 625 個音高轉換組合，`NotePitchClipboardTest` 檢查上下界、覆寫及清空。
+Otherwise, `TuningController` sends at most one accepted vanilla `interactBlock` call at a time. It waits for the client world to observe the expected next pitch before sending another request. It stops if the target changes, the player changes dimension or moves out of range, the main hand becomes non-empty, the response times out, or 25 interactions have been sent. This keeps multiplayer behavior bounded and server-authoritative.
 
-## 驗收標準
+## Mixin integration
 
-1. Fabric 1.21.8 正常編譯，載入成功。
-2. Tweakeroo → Tweaks 顯示三個設定，開關與快捷鍵可儲存。
-3. 第一次右鍵僅開 GUI，不能先把音高增加 1。
-4. 單人世界調音後重新進入世界，音高仍正確且其他玩家可同步看到。
-5. 外部原版伺服器不裝模組，也能完成逐次調音；限制互動時中斷而不錯誤宣稱成功。
-6. 複製/貼上支援音高 0 與 24；關閉相應開關時停止操作。
-7. 安裝 Tweak Click、Fast Right Click 時，沒有規則列表覆寫與重複操作。
+`noteblocktweaks.mixins.json` declares three required client mixins against Tweakeroo. They append the extended toggles to Tweakeroo's configuration and register the related MaLiLib keybinds. The input-handler mixin uses `@Pseudo` and `remap = false` because its target comes from another mod rather than Minecraft mappings.
+
+## Configuration and persistence
+
+`ModConfig` writes defaults only when its file does not exist. If the existing file cannot be read, it retains the file and uses in-memory defaults for the current session. Timing values are clamped to prevent zero-delay interaction loops or unbounded acknowledgements.
+
+The pitch clipboard is session-only. It is cleared when the client no longer has a world.
+
+## Verification
+
+Run the complete automated suite with Java 21:
+
+```bash
+./gradlew clean test check build --offline --no-daemon
+```
+
+`PitchMathTest` covers pitch names, wrapping, and valid pitch pairs. `NotePitchClipboardTest` covers initial state, boundaries, overwrite behavior, and clearing. Automated tests do not replace manual in-game verification of Tweakeroo configuration, GUI input, integrated-server synchronization, and remote-server interaction acknowledgements.
