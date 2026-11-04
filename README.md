@@ -34,8 +34,10 @@ NoteBlock Tweaks 是 Minecraft Java **1.21.8** 的 Fabric 純客戶端模組，�
 
 ### 安裝
 
+請從 [GitHub Releases](https://github.com/oMiki0826o/NoteBlockTweaks/releases) 下載已編譯的正式 JAR。每次 `main` 分支更新且 GitHub Actions 測試與建置成功後，會以 `gradle.properties` 的 `mod_version` 作為版本標籤建立或更新對應 Release；Pull Request 只執行驗證，不發布正式版。
+
 1. 安裝相同 Minecraft 版本的 Fabric Loader、Fabric API、MaLiLib 與 Tweakeroo。
-2. 將 Release 的 `noteblock-tweaks-0.3.0+mc1.21.8.jar` 放入用戶端 `mods` 資料夾。
+2. 將 Release 的 `noteblock-tweaks-0.3.1+mc1.21.8.jar` 放入用戶端 `mods` 資料夾。
 3. 以 Java 21 啟動遊戲。
 
 > 不要將此 JAR 放入專用伺服器的 `mods` 資料夾。它宣告為 client-only 模組，伺服器端不提供功能。
@@ -58,13 +60,15 @@ NoteBlock Tweaks 是 Minecraft Java **1.21.8** 的 Fabric 純客戶端模組，�
 
 ### 從原始碼建置
 
+Actions 的 Build workflow 亦會提供可下載的 `NoteBlockTweaks-mc1.21.8` Artifact；正式版請使用 Releases 的 JAR（非 `-sources.jar`）。
+
 需要 Java 21。macOS／Linux：
 
 ```bash
 ./gradlew clean test check build
 ```
 
-成品位於 `build/libs/noteblock-tweaks-0.3.0+mc1.21.8.jar`。
+成品位於 `build/libs/noteblock-tweaks-0.3.1+mc1.21.8.jar`。
 
 ### 授權
 
@@ -97,8 +101,10 @@ In singleplayer, it safely sets the target pitch through the integrated server. 
 
 ### Installation
 
+Download the compiled release JAR from [GitHub Releases](https://github.com/oMiki0826o/NoteBlockTweaks/releases). A successful GitHub Actions build on `main` creates or updates the Release named after `mod_version` in `gradle.properties`; pull requests only validate and build, without publishing a release.
+
 1. Install Fabric Loader, Fabric API, MaLiLib, and Tweakeroo for the same Minecraft version.
-2. Place `noteblock-tweaks-0.3.0+mc1.21.8.jar` from Releases in the client's `mods` directory.
+2. Place `noteblock-tweaks-0.3.1+mc1.21.8.jar` from Releases in the client's `mods` directory.
 3. Start the game with Java 21.
 
 > Do not place this JAR in a dedicated server's `mods` directory. The mod is declared client-only and provides no server-side feature.
@@ -121,13 +127,15 @@ Configuration is stored in `config/noteblocktweaks.json`:
 
 ### Building from source
 
+The Build workflow also uploads the `NoteBlockTweaks-mc1.21.8` artifact. Use the compiled JAR from GitHub Releases for installations (not the sources JAR).
+
 Java 21 is required. On macOS or Linux:
 
 ```bash
 ./gradlew clean test check build
 ```
 
-The output is `build/libs/noteblock-tweaks-0.3.0+mc1.21.8.jar`.
+The output is `build/libs/noteblock-tweaks-0.3.1+mc1.21.8.jar`.
 
 ### License
 
