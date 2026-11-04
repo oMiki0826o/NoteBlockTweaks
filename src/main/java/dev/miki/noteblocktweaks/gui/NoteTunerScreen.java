@@ -1,6 +1,6 @@
 /*
  * File: NoteTunerScreen.java
- * Modification: 2026-10-10 - Add pitch copy/paste buttons to 25-note tuner GUI.
+ * Modification: 2026-11-04 - Avoid repeated per-frame screen background blur in the tuner GUI.
  */
 package dev.miki.noteblocktweaks.gui;
 
@@ -77,7 +77,10 @@ public final class NoteTunerScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackground(context, mouseX, mouseY, delta);
+        // Do not call Screen#renderBackground here: another screen hook may have
+        // already applied the once-per-frame blur, causing an IllegalStateException.
+        // A translucent overlay provides contrast without invoking the blur pipeline.
+        context.fill(0, 0, width, height, 0xA0000000);
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 12, 0xFFFFFF);
         context.drawCenteredTextWithShadow(textRenderer,
